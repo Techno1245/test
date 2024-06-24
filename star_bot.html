@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram User Info</title>
+    <style>
+        body {
+            background-color: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            color: #FFFFFF;
+            height: 100vh;
+            margin: 0;
+        }
+        #userInfo {
+            text-align: center;
+            margin-top: 20px;
+        }
+        #userPhoto {
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+    </style>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div id="userInfo">
+        <img id="userPhoto" src="" alt="User Photo" width="100" height="100">
+        <p id="userName">Name: N/A</p>
+        <p id="userUsername">Username: N/A</p>
+        <p id="userId">User ID: N/A</p>
+        <p id="userLanguage">Language: N/A</p>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tg = window.Telegram.WebApp;
+
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                const userInfoDiv = document.getElementById('userInfo');
+                const userPhoto = document.getElementById('userPhoto');
+                const userName = document.getElementById('userName');
+                const userUsername = document.getElementById('userUsername');
+                const userId = document.getElementById('userId');
+                const userLanguage = document.getElementById('userLanguage');
+
+                userName.textContent = `Name: ${user.first_name} ${user.last_name || ''}`;
+                userUsername.textContent = `Username: ${user.username || 'N/A'}`;
+                userId.textContent = `User ID: ${user.id}`;
+                userLanguage.textContent = `Language: ${user.language_code || 'N/A'}`;
+
+                // Fetch and display user's profile photo
+                const userIdParam = user.id;
+                const apiUrl = `https://api.telegram.org/bot${API_TOKEN}/getUserProfilePhotos?user_id=${userIdParam}`;
+
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.result && data.result.photos && data.result.photos.length > 0) {
+                            const photoFileId = data.result.photos[0][0].file_id;
+                            const fileApiUrl = `https://api.telegram.org/bot${API_TOKEN}/getFile?file_id=${photoFileId}`;
+                            
+                            fetch(fileApiUrl)
+                                .then(response => response.json())
+                                .then(fileData => {
+                                    const fileUrl = `https://api.telegram.org/file/bot${API_TOKEN}/${fileData.result.file_path}`;
+                                    userPhoto.src = fileUrl;
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching file data:', error);
+                                });
+                        } else {
+                            userPhoto.src = 'default_photo_url_here'; // Set a default photo URL if no photo is available
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching user profile photos:', error);
+                    });
+            } else {
+                document.getElementById('userInfo').innerText = 'User information is not available.';
+            }
+        });
+    </script>
+</body>
+</html>
